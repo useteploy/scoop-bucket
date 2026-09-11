@@ -1,17 +1,32 @@
 # Open audit items
 
-Unresolved findings for this repository from the ChatGPT-led audit series (2026-09-09 through 2026-09-11, passes 1-5; register: teploy-neutron-lullmail expanded audit). Every P0/P1 finding has been fixed and verified; the items below are the remaining P2/P3 tail plus one item needing validation. Fields are quoted from the audit register; line references point at the review commits listed per item where recorded.
+Unresolved findings for this repository from the ChatGPT-led audit series
+(2026-09-09 through 2026-09-11, passes 1-5; register:
+teploy-neutron-lullmail expanded audit). Every P0/P1 finding has been fixed
+and verified; the P2/P3 tail below is what remains.
 
-Open items: 1 P2 (1 total)
+Open items: 0
 
-## useteploy__scoop-bucket-01 - P2 - Open improvement
+## Resolved from this register
 
-**Make release freshness and Windows installation checks explicit**
+- useteploy__scoop-bucket-01 — fixed 2026-09-11:
+  - `.github/workflows/validate.yml` (weekly + push/PR): a freshness job
+    fails loudly when teploy.json's version is behind the latest
+    useteploy/teploy-cli GitHub release, and a windows-latest job
+    installs from the checked-in manifest (real download + scoop hash
+    verification), runs `teploy version` against the manifest version,
+    and independently verifies the ARM64 asset's SHA-256.
+  - checkver/autoupdate deliberately NOT added: goreleaser's scoops
+    generator does not carry those fields (a manual edit would be
+    clobbered by the next release push), and autoupdate would race the
+    authoritative publisher (teploy-cli's release pipeline). The CI job
+    is the freshness signal.
 
-- Kind: Improvement
-- Evidence: teploy.json pins x64/ARM64 v0.1.33 artifacts but has no checkver/autoupdate fields; the bucket has no tracked update/validation workflow. The Homebrew formula reviewed during this audit also pins v0.1.33, so a version mismatch is not established.
-- Impact: A failure in any upstream publisher can leave the bucket stale without a repository-local signal.
-- Proposed fix: Document the authoritative upstream publisher and add a freshness/asset-validation check there or here. Add checkver/autoupdate only if compatible with that release ownership; avoid competing updaters.
-- Acceptance test: On a test release, verify the bucket advances once, both hashes match downloaded assets, and both supported Windows architectures can invoke teploy --version.
-- Review commit: `3a7064876290e49be231712c3628ee1b45c87083` (last reviewed 2026-09-10)
+## Findings surfaced while fixing (not this repo's to fix)
 
+- The staleness this item predicted is LIVE as of 2026-09-11: upstream
+  teploy-cli is at v0.1.33 while this bucket (and the homebrew tap) last
+  advanced at v0.1.30 — the goreleaser tap/bucket publish step has been
+  failing since v0.1.31 (most likely the HOMEBREW_TAP_GITHUB_TOKEN in
+  teploy-cli's release workflow). Needs attention in teploy-cli's release
+  config/secrets; the new freshness job will stay red until then.

@@ -1,0 +1,58 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "31 4 * * 1"
+  workflow_dispatch:
+
+# The teploy-cli release pipeline (goreleaser scoops) is the authoritative
+# publisher of this bucket — no autoupdate here, to avoid a second, racing
+# updater. This workflow is the repository-local signal that the publisher
+# actually advanced the bucket and that its assets are what they claim.
+
+jobs:
+  freshness:
+    name: Bucket tracks the latest teploy-cli release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare manifest version with the latest GitHub release
+        run: |
+          manifest="$(jq -r .version teploy.json)"
+          latest="$(curl -fsSL https://api.github.com/repos/useteploy/teploy-cli/releases/latest | jq -r .tag_name | sed 's/^v//')"
+          echo "manifest: $manifest  latest release: $latest"
+          if [ "$manifest" != "$latest" ]; then
+            echo "::error::bucket is stale - manifest $manifest, upstream v$latest. The teploy-cli release (goreleaser scoops) owns advancing this bucket; its publish step failed or has not run."
+            exit 1
+          fi
+
+  windows:
+    name: Install and run on Windows, verify both asset hashes
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install from the checked-in manifest and run teploy
+        shell: pwsh
+        run: |
+          $manifest = Get-Content teploy.json | ConvertFrom-Json
+          scoop install "$env:GITHUB_WORKSPACE\teploy.json"
+          $teploy = "$env:USERPROFILE\scoop\shims\teploy.exe"
+          $out = & $teploy version
+          $out
+          if ($out -notmatch [regex]::Escape($manifest.version)) {
+            throw "installed teploy does not report the manifest version ($($manifest.version))"
+          }
+      - name: Verify the ARM64 asset hash matches the manifest
+        shell: pwsh
+        run: |
+          $m = Get-Content teploy.json | ConvertFrom-Json
+          $tmp = New-TemporaryFile
+          curl.exe -fsSL -o $tmp $m.architecture.arm64.url
+          $actual = (Get-FileHash -Algorithm SHA256 $tmp).Hash.ToLower()
+          Write-Output "arm64 asset: $actual"
+          if ($actual -ne $m.architecture.arm64.hash) {
+            throw "arm64 hash mismatch: manifest $($m.architecture.arm64.hash), asset $actual"
+          }
