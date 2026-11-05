@@ -1,19 +1,19 @@
 {
-    "version": "0.1.50",
+    "version": "0.1.51",
     "architecture": {
         "64bit": {
-            "url": "https://github.com/useteploy/teploy-cli/releases/download/v0.1.50/teploy_windows_amd64.zip",
+            "url": "https://github.com/useteploy/teploy-cli/releases/download/v0.1.51/teploy_windows_amd64.zip",
             "bin": [
                 "teploy.exe"
             ],
-            "hash": "3c59806e41315d24d7d2e617548f606328ea0997d5838149e47e02f7caa2e001"
+            "hash": "dbb49d6ea922ffc4503a6593b3e794a9342ac60f554f9103b895ffccbb67bdc9"
         },
         "arm64": {
-            "url": "https://github.com/useteploy/teploy-cli/releases/download/v0.1.50/teploy_windows_arm64.zip",
+            "url": "https://github.com/useteploy/teploy-cli/releases/download/v0.1.51/teploy_windows_arm64.zip",
             "bin": [
                 "teploy.exe"
             ],
-            "hash": "37eacd954283b1776431bf842e64734c786ee27ae5a86faba2cf458fd22d5226"
+            "hash": "bac164a8ac9a16c418a2091872ef8d95dad0c37f2530b41d4c426103b71810eb"
         }
     },
     "homepage": "https://github.com/useteploy/teploy-cli",
